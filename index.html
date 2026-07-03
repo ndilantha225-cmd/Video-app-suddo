@@ -329,27 +329,49 @@
 <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 <script>
-    // 🎯 Foreign Supabase Database Connection Credentials 
+    // 🎯 Database & Bot Settings
     const SUPABASE_URL = "https://dphrgokjgpdfqonbablf.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_6qA-VvNeXEqgCWFqKLBciA_3470LLVH"; 
-    
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-    // 🎯 🤖 අලුත්ම බොට්ගේ Username එක!
     const BOT_APP_URL = "https://t.me/MiniAppHub12bot/video"; 
-    
     const ADMIN_IDS = [1832796275, 8913675006]; 
 
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
     
-    let urlParams = new URLSearchParams(window.location.search);
-    let startParam = tg.initDataUnsafe?.start_param || urlParams.get('tgWebAppStartParam') || "";
+    // 🎯 🚨 මෙන්න අලුත්ම Super Robust Deep Link Parser එක (GitHub Pages වලට විශේෂයෙන්ම හදපු)
+    let startParam = "";
     
-    if(startParam && startParam.includes('=')) {
-        let parts = startParam.split('=');
-        startParam = parts[parts.length - 1];
+    // 1. Telegram Native Data
+    if (tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
+        startParam = tg.initDataUnsafe.start_param;
+    } 
+    // 2. URL Search Params (Standard)
+    else {
+        let urlParams = new URLSearchParams(window.location.search);
+        startParam = urlParams.get('tgWebAppStartParam') || urlParams.get('startapp') || "";
     }
+    
+    // 3. Hash Parameter Extraction (GitHub Pages සමහර වෙලාවට Data යවන්නේ මෙතනින්)
+    if (!startParam && window.location.hash) {
+        let hashString = window.location.hash.substring(1);
+        let hashParams = new URLSearchParams(hashString);
+        
+        let tgWebAppData = hashParams.get('tgWebAppData');
+        if (tgWebAppData) {
+            let nestedParams = new URLSearchParams(tgWebAppData);
+            startParam = nestedParams.get('start_param') || "";
+        } else {
+            startParam = hashParams.get('start_param') || hashParams.get('tgWebAppStartParam') || "";
+        }
+    }
+    
+    // Clean string formats 
+    if(startParam && startParam.includes('=')) {
+        startParam = startParam.split('=').pop();
+    }
+    startParam = startParam.trim();
+    // 🚨 (End of Deep Link Parser)
 
     if (ADMIN_IDS.includes(tg.initDataUnsafe?.user?.id)) {
         document.getElementById('adminBox').style.display = 'block';
