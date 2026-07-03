@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Video Hub</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src='https://libtl.com/sdk.js' data-zone='11181851' data-sdk='show_11181851'></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg-color: #060913;
+            --card-bg: #111625;
+            --text-color: #f3f4f6;
+            --accent-gradient: linear-gradient(135deg, #a855f7, #6366f1);
+            --share-gradient: linear-gradient(135deg, #0ea5e9, #2563eb);
+            --admin-gradient: linear-gradient(135deg, #f43f5e, #e11d48);
+            --border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .app-header {
+            width: 100%;
+            max-width: 480px;
+            text-align: left;
+            margin: 10px 0 20px 0;
+            padding-left: 5px;
+        }
+        .header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .app-header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(to right, #ffffff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .app-header p { color: #6b7280; font-size: 13px; margin: 5px 0 0 0; }
+
+        #google_translate_element {
+            background-color: #161f38;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #4338ca;
+        }
+        .goog-te-combo {
+            background-color: #161f38;
+            color: white;
+            border: none;
+            padding: 5px;
+            font-size: 12px;
+            outline: none;
+            margin: 0;
+        }
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0px !important; }
+        .goog-logo-link { display: none !important; }
+        .goog-te-gadget { color: transparent !important; }
+
+        .more-section-title {
+            width: 100%;
+            max-width: 480px;
+            text-align: left;
+            font-size: 16px;
+            font-weight: 700;
+            color: #a855f7;
+            margin: 25px 0 10px 0;
+            padding-left: 5px;
+            border-left: 3px solid #6366f1;
+        }
+
+        #video-list-wrapper, #more-videos-wrapper {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .video-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        
+        .thumb-container {
+            width: 100%;
+            position: relative;
+            background: #1c2333;
+            aspect-ratio: 16 / 9;
+        }
+        .thumb-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .card-info { padding: 18px; }
+        
+        .card-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .video-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .share-btn {
+            background: var(--share-gradient);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.25);
+            flex-shrink: 0;
+        }
+
+        .parts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .part-btn {
+            background: rgba(255, 255, 255, 0.03);
+            color: #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        .part-btn:hover {
+            background: var(--accent-gradient);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 5px 15px rgba(168, 85, 247, 0.25);
+        }
+        .part-left { display: flex; flex-direction: column; text-align: left; gap: 2px; }
+        .view-count { font-size: 11px; color: #9ca3af; font-weight: normal; }
+        .part-btn:hover .view-count { color: #e9d5ff; }
+        .unlock-badge { background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+
+        /* Admin Panel Styling */
+        .admin-panel {
+            width: 100%;
+            max-width: 440px;
+            display: none;
+            background: #0f1322;
+            border: 2px dashed #f43f5e;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 20px;
+            box-sizing: border-box;
+        }
+        .admin-panel h3 { color: #f43f5e; margin: 0 0 15px 0; font-size: 18px; }
+        .admin-panel input, .admin-panel label {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #272f45;
+            background: #161f38;
+            color: white;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .admin-panel label { background: none; border: none; padding: 0; color: #9ca3af; font-size: 13px; }
+        .admin-panel input[type="file"] { background: #0b0e17; cursor: pointer; }
+        
+        .add-more-btn {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .admin-btn { background: var(--admin-gradient); width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; color:white; font-weight:700; border:none; }
+        .upload-status { color: #10b981; font-size: 13px; text-align: center; margin-bottom: 10px; display: none; font-weight: 600; }
+        #no-content { color: #4b5563; font-size: 14px; padding: 40px; text-align: center; width: 100%; }
+
+        .admin-section { background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 14px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .admin-section-title { font-size: 14px; font-weight: 700; color: #0ea5e9; margin-bottom: 10px; border-bottom: 1px solid #272f45; padding-bottom: 5px; }
+        .admin-link-item { background: #161f38; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.03); }
+        .copy-inline-btn { background: #0ea5e9; color: white; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .view-mode-banner { display: none; width: 100%; max-width: 480px; background: #1e1b4b; border: 1px solid #4338ca; padding: 10px; border-radius: 12px; margin-bottom: 15px; font-size: 12px; color: #c084fc; cursor: pointer; }
+
+        /* Pagination Controls */
+        .pagination-controls {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 480px;
+            margin-top: 20px;
+            padding: 10px 0;
+            border-top: 1px solid var(--border-color);
+        }
+        .pagination-controls button {
+            background: #1e1b4b;
+            color: #c084fc;
+            border: 1px solid #4338ca;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .pagination-controls button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: transparent;
+            border-color: #374151;
+            color: #6b7280;
+        }
+        .pagination-controls button:not(:disabled):hover {
+            background: var(--accent-gradient);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+        }
+        #pageIndicator {
+            color: #e5e7eb;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="header-top-row">
+        <h1>🍿 Premium Video Hub</h1>
+        <div id="google_translate_element"></div>
+    </div>
+    <p>Tap the Unlock button on the video you want to watch.</p>
+</div>
+
+<div class="admin-panel" id="adminBox">
+    <h3>🛠️ Admin Panel (Only for You)</h3>
+
+    <div class="admin-section">
+        <div class="admin-section-title">🔗 Copy Unique Video App Links</div>
+        <div id="adminLinksContainer" style="max-height: 180px; overflow-y: auto; padding: 5px 0;">
+            <span style="color:#6b7280; font-size:12px;">Loading unique links...</span>
+        </div>
+    </div>
+    
+    <input type="text" id="inputTitle" placeholder="Album Title">
+    
+    <label for="inputPhoto">📸 Thumbnail Photo (From Gallery):</label>
+    <input type="file" id="inputPhoto" accept="image/*">
+    <div id="uploadStatus" class="upload-status">⏳ Uploading photo... Please wait.</div>
+
+    <div id="linksContainer">
+        <label style="margin-bottom: 2px;">🔗 Video Bot Links (Parts):</label>
+        <input type="text" class="input-video-url" placeholder="Telegram Bot URL (Part 1)">
+    </div>
+    <button type="button" class="add-more-btn" id="addMoreBtn">➕ Add More Part</button>
+
+    <button class="btn admin-btn" id="saveBtn">🚀 Publish Video Album</button>
+</div>
+
+<div class="view-mode-banner" id="viewModeBanner" onclick="clearDeepLink();">
+    ✨ You are viewing a single album. Click here to view all premium albums.
+</div>
+
+<div id="video-list-wrapper">
+    <div id="no-content">Loading premium list...</div>
+</div>
+
+<div id="moreVideosSection" style="display: none; width: 100%; max-width: 480px;">
+    <div class="more-section-title">🔥 More Premium Albums</div>
+    <div id="more-videos-wrapper"></div>
+</div>
+
+<div class="pagination-controls" id="paginationControls">
+    <button id="prevPageBtn" onclick="changePage(-1)">◀ Prev</button>
+    <span id="pageIndicator">Page 1</span>
+    <button id="nextPageBtn" onclick="changePage(1)">Next ▶</button>
+</div>
+
+<script type="text/javascript">
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en', 
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+        }, 'google_translate_element');
+    }
+</script>
+<script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script>
+    // 🎯 Foreign Supabase Database Connection Credentials 
+    const SUPABASE_URL = "https://dphrgokjgpdfqonbablf.supabase.co"; 
+    const SUPABASE_KEY = "sb_publishable_6qA-VvNeXEqgCWFqKLBciA_3470LLVH"; 
+    
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // 🎯 🤖 අලුත්ම බොට්ගේ Username එක!
+    const BOT_APP_URL = "https://t.me/MiniAppHub12bot/video"; 
+    
+    const ADMIN_IDS = [1832796275, 8913675006]; 
+
+    const tg = window.Telegram.WebApp;
+    tg.ready(); tg.expand();
+    
+    let urlParams = new URLSearchParams(window.location.search);
+    let startParam = tg.initDataUnsafe?.start_param || urlParams.get('tgWebAppStartParam') || "";
+    
+    if(startParam && startParam.includes('=')) {
+        let parts = startParam.split('=');
+        startParam = parts[parts.length - 1];
+    }
+
+    if (ADMIN_IDS.includes(tg.initDataUnsafe?.user?.id)) {
+        document.getElementById('adminBox').style.display = 'block';
+    }
+
+    let uploadedImageUrl = "";
+    let selectedLinkToOpen = "";
+    let selectedRecordId = null;
+
+    let allAlbumsList = [];
+    let currentPage = 1;
+    const albumsPerPage = 10; 
+
+    let linkCount = 1;
+    document.getElementById('addMoreBtn').addEventListener('click', () => {
+        linkCount++;
+        const container = document.getElementById('linksContainer');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'input-video-url';
+        input.placeholder = `Telegram Bot URL (Part ${linkCount})`;
+        container.appendChild(input);
+    });
+
+    document.getElementById('inputPhoto').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const statusDiv = document.getElementById('uploadStatus');
+        statusDiv.style.display = "block";
+        statusDiv.innerText = "⏳ Uploading photo... Please wait.";
+
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${Math.random()}_${new Date().getTime()}.${fileExt}`;
+
+        let { data, error } = await _supabase.storage.from('thumbnails').upload(filePath, file);
+        if (!error) {
+            const { data: publicData } = _supabase.storage.from('thumbnails').getPublicUrl(filePath);
+            uploadedImageUrl = publicData.publicUrl;
+            statusDiv.style.display = "block";
+            statusDiv.style.color = "#10b981";
+            statusDiv.innerText = "✅ Thumbnail uploaded successfully!";
+        } else {
+            statusDiv.style.display = "block";
+            statusDiv.style.color = "#f43f5e";
+            statusDiv.innerText = "❌ Upload Server Error!";
+        }
+    });
+
+    function createVideoCardElement(group) {
+        const card = document.createElement('div');
+        card.className = 'video-card notranslate-img';
+        
+        let imgHtml = group.thumbnail ? 
+            `<div class="thumb-container"><img class="thumb-img" src="${group.thumbnail}?t=${new Date().getTime()}" alt="Thumb"></div>` : 
+            `<div class="thumb-container" style="display:flex;align-items:center;justify-content:center;color:#4b5563;">No Thumbnail</div>`;
+
+        let partsHtml = "";
+        group.parts.forEach((part, index) => {
+            partsHtml += `
+                <button class="part-btn" onclick="handlePartClick('${part.url}', ${part.id}, ${part.views})">
+                    <div class="part-left">
+                        <span>🍿 Part ${index + 1}</span>
+                        <span class="view-count">👁️ ${part.views.toLocaleString()} views</span>
+                    </div>
+                    <div class="unlock-badge">Unlock</div>
+                </button>
+            `;
+        });
+
+        card.innerHTML = `
+            ${imgHtml} 
+            <div class="card-info">
+                <div class="card-top-row">
+                    <div class="video-title">${group.title}</div>
+                    <button class="share-btn" onclick="window.shareVideo('${group.title}', '${group.safe_id}')">🔗 Share</button>
+                </div>
+                <div class="parts-container">${partsHtml}</div>
+            </div>
+        `;
+        return card;
+    }
+
+    async function loadVideoList() {
+        try {
+            let { data: videos } = await _supabase.from('videos').select('*').order('id', { ascending: false });
+            
+            if (videos && videos.length > 0) {
+                const groupedVideos = {};
+
+                videos.forEach(vid => {
+                    const mainTitle = vid.title.trim();
+                    const safeId = "vid_" + vid.id;
+
+                    if (!groupedVideos[mainTitle]) {
+                        groupedVideos[mainTitle] = { title: mainTitle, thumbnail: vid.thumbnail, safe_id: safeId, parts: [] };
+                    }
+                    if(vid.thumbnail && !groupedVideos[mainTitle].thumbnail) {
+                        groupedVideos[mainTitle].thumbnail = vid.thumbnail;
+                    }
+                    groupedVideos[mainTitle].parts.push({
+                        id: vid.id,
+                        url: vid.video_url,
+                        views: vid.views || 0
+                    });
+                });
+
+                if (ADMIN_IDS.includes(tg.initDataUnsafe?.user?.id)) {
+                    const adminLinksDiv = document.getElementById('adminLinksContainer');
+                    adminLinksDiv.innerHTML = "";
+                    Object.values(groupedVideos).forEach(group => {
+                        const uniqueLink = BOT_APP_URL + "?startapp=" + group.safe_id;
+                        const item = document.createElement('div');
+                        item.className = 'admin-link-item';
+                        item.innerHTML = `
+                            <span>🎬 ${group.title}</span>
+                            <button class="copy-inline-btn" onclick="window.copyToClipboard('${uniqueLink}')">📋 Copy Link</button>
+                        `;
+                        adminLinksDiv.appendChild(item);
+                    });
+                }
+
+                allAlbumsList = Object.values(groupedVideos);
+                renderCurrentPage();
+
+            } else {
+                document.getElementById('video-list-wrapper').innerHTML = `<div id="no-content">No premium content available yet.</div>`;
+            }
+        } catch(e) {
+            document.getElementById('video-list-wrapper').innerHTML = `<div id="no-content">Loading Error.</div>`;
+        }
+    }
+
+    function renderCurrentPage() {
+        const wrapper = document.getElementById('video-list-wrapper');
+        const moreWrapper = document.getElementById('more-videos-wrapper');
+        const moreSection = document.getElementById('moreVideosSection');
+        const paginationControls = document.getElementById('paginationControls');
+        const pageIndicator = document.getElementById('pageIndicator');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+
+        wrapper.innerHTML = "";
+        moreWrapper.innerHTML = "";
+        moreSection.style.display = 'none';
+
+        let listToPaginate = [...allAlbumsList];
+
+        if (startParam !== "") {
+            const foundVideoIndex = listToPaginate.findIndex(v => v.safe_id === startParam);
+            if (foundVideoIndex !== -1) {
+                const foundVideo = listToPaginate.splice(foundVideoIndex, 1)[0];
+                wrapper.appendChild(createVideoCardElement(foundVideo));
+                document.getElementById('viewModeBanner').style.display = 'block'; 
+                if(listToPaginate.length > 0) {
+                    moreSection.style.display = 'block';
+                }
+            }
+        } else {
+            document.getElementById('viewModeBanner').style.display = 'none';
+        }
+
+        let totalAlbums = listToPaginate.length;
+        let totalPages = Math.ceil(totalAlbums / albumsPerPage) || 1;
+        
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * albumsPerPage;
+        const endIndex = startIndex + albumsPerPage;
+        const currentAlbums = listToPaginate.slice(startIndex, endIndex);
+
+        currentAlbums.forEach(group => {
+            if (startParam !== "") {
+                moreWrapper.appendChild(createVideoCardElement(group));
+            } else {
+                wrapper.appendChild(createVideoCardElement(group));
+            }
+        });
+
+        if (totalAlbums > albumsPerPage) {
+            paginationControls.style.display = 'flex';
+            pageIndicator.innerText = `Page ${currentPage} / ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
+        } else {
+            paginationControls.style.display = 'none';
+        }
+    }
+
+    window.changePage = function(step) {
+        currentPage += step;
+        renderCurrentPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    }
+
+    // 🎯 බලවත්ම Auto-Copy ක්‍රමය (Navigator API + Fallback)
+    window.copyToClipboard = function(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function() {
+                tg.showAlert("✅ Link Auto-Copied! Paste it in your channel.");
+            }).catch(function(err) {
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        let textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand("copy");
+            tg.showAlert("✅ Link Auto-Copied! Paste it in your channel.");
+        } catch (err) {
+            window.prompt("Your device blocked Auto-Copy. Copy manually below:", text);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    // 🎯 Share බටන් එක එබුවමත් Auto Copy වෙනවා
+    window.shareVideo = function(title, safeId) {
+        const shareLink = BOT_APP_URL + "?startapp=" + safeId;
+        window.copyToClipboard(shareLink);
+    }
+
+    window.clearDeepLink = function() {
+        startParam = "";
+        currentPage = 1; 
+        document.getElementById('viewModeBanner').style.display = 'none';
+        renderCurrentPage();
+    }
+
+    window.handlePartClick = async function(link, id, currentViews) {
+        selectedLinkToOpen = link;
+        selectedRecordId = id;
+
+        if (typeof show_11181851 !== 'function') {
+            tg.showPopup({ 
+                title: '⚠️ AdBlocker Detected!', 
+                message: 'Please turn off your AdBlocker, restart the app, and try again to unlock the video!' 
+            });
+            return; 
+        }
+
+        try {
+            await _supabase
+                .from('videos')
+                .update({ views: currentViews + 1 })
+                .eq('id', id);
+        } catch (e) { console.log("Views Update Error"); }
+
+        show_11181851().then(() => {
+            redirectUser();
+        }).catch((e) => {
+            redirectUser(); 
+        });
+    }
+
+    function redirectUser() {
+        if(selectedLinkToOpen) {
+            window.location.href = selectedLinkToOpen;
+        }
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+        const title = document.getElementById('inputTitle').value.trim();
+        const urlInputs = document.querySelectorAll('.input-video-url');
+        
+        if(!title) { alert('Album Title is required!'); return; }
+
+        const recordsToInsert = [];
+        urlInputs.forEach(input => {
+            const url = input.value.trim();
+            if(url) {
+                recordsToInsert.push({ title: title, thumbnail: uploadedImageUrl, video_url: url, views: 0 });
+            }
+        });
+
+        if(recordsToInsert.length === 0) { alert('Please enter at least one video URL!'); return; }
+
+        const { error = null } = await _supabase.from('videos').insert(recordsToInsert);
+        if (!error) {
+            alert('New video album successfully published!');
+            location.reload();
+        } else { alert('Database Error: ' + error.message); }
+    });
+    
+    loadVideoList();
+</script>
+
+</body>
+</html>
