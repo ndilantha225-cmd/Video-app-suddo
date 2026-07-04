@@ -7,7 +7,6 @@
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src='https://libtl.com/sdk.js' data-zone='11181851' data-sdk='show_11181851'></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root {
@@ -169,8 +168,6 @@
             box-shadow: 0 5px 15px rgba(168, 85, 247, 0.25);
         }
         .part-left { display: flex; flex-direction: column; text-align: left; gap: 2px; }
-        .view-count { font-size: 11px; color: #9ca3af; font-weight: normal; }
-        .part-btn:hover .view-count { color: #e9d5ff; }
         .unlock-badge { background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
 
         /* Admin Panel Styling */
@@ -199,7 +196,6 @@
             font-size: 14px;
         }
         .admin-panel label { background: none; border: none; padding: 0; color: #9ca3af; font-size: 13px; }
-        .admin-panel input[type="file"] { background: #0b0e17; cursor: pointer; }
         
         .add-more-btn {
             background: #059669;
@@ -212,14 +208,12 @@
             font-weight: 700;
             margin-bottom: 15px;
         }
-        .admin-btn { background: var(--admin-gradient); width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; color:white; font-weight:700; border:none; }
-        .upload-status { color: #10b981; font-size: 13px; text-align: center; margin-bottom: 10px; display: none; font-weight: 600; }
+        .admin-btn { background: var(--admin-gradient); width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; color:white; font-weight:700; border:none; cursor: pointer; }
         #no-content { color: #4b5563; font-size: 14px; padding: 40px; text-align: center; width: 100%; }
 
         .admin-section { background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 14px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .admin-section-title { font-size: 14px; font-weight: 700; color: #0ea5e9; margin-bottom: 10px; border-bottom: 1px solid #272f45; padding-bottom: 5px; }
         .admin-link-item { background: #161f38; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(255,255,255,0.03); }
-        .link-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         .copy-inline-btn { background: #0ea5e9; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; width: 100%; }
         
         .view-mode-banner { display: none; width: 100%; max-width: 480px; background: #1e1b4b; border: 1px solid #4338ca; padding: 10px; border-radius: 12px; margin-bottom: 15px; font-size: 12px; color: #c084fc; cursor: pointer; }
@@ -244,7 +238,6 @@
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
         .pagination-controls button:disabled {
             opacity: 0.4;
@@ -266,7 +259,7 @@
 </div>
 
 <div class="admin-panel" id="adminBox">
-    <h3>🛠️ Admin Panel (Only for You)</h3>
+    <h3>🛠️ Admin Panel (Telegram Database Connected)</h3>
 
     <div class="admin-section">
         <div class="admin-section-title">🔗 Copy Unique Video App Links</div>
@@ -276,11 +269,8 @@
     </div>
     
     <input type="text" id="inputTitle" placeholder="Album Title">
+    <input type="text" id="inputPhotoUrl" placeholder="📸 Image/Thumbnail URL (e.g. Imgur, Postimages link)">
     
-    <label for="inputPhoto">📸 Thumbnail Photo (From Gallery):</label>
-    <input type="file" id="inputPhoto" accept="image/*">
-    <div id="uploadStatus" class="upload-status">⏳ Uploading photo... Please wait.</div>
-
     <div id="linksContainer">
         <label style="margin-bottom: 2px;">🔗 Video Bot Links (Parts):</label>
         <input type="text" class="input-video-url" placeholder="Telegram Bot URL (Part 1)">
@@ -320,9 +310,10 @@
 <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 <script>
-    const SUPABASE_URL = "https://dphrgokjgpdfqonbablf.supabase.co"; 
-    const SUPABASE_KEY = "sb_publishable_6qA-VvNeXEqgCWFqKLBciA_3470LLVH"; 
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 🎯 TELEGRAM AUTO-DATABASE SETTINGS (100% UNLIMITED)
+    const BOT_TOKEN = "8834269016:AAEFmQlpDIOkckdcjG7abV0U7WLh0sg-Fss";
+    const CHANNEL_USERNAME = "abhshksk";
+    const MESSAGE_ID = "2";
     
     const BOT_APP_URL = "https://t.me/MiniAppHub12bot/video"; 
     const ADMIN_IDS = [1832796275, 8913675006]; 
@@ -330,38 +321,21 @@
     const tg = window.Telegram.WebApp;
     tg.ready(); tg.expand();
     
-    // 🎯 🚨 අතිශය ප්‍රබල ID Extraction (Regex + SDK)
     let startParam = "";
-    
     if (tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
         startParam = tg.initDataUnsafe.start_param;
-    } 
-    
-    if (!startParam) {
+    } else {
         let match = window.location.href.match(/[?&#](?:startapp|start_param)=([^&]+)/);
-        if (match) {
-            startParam = match[1];
-        }
+        if (match) startParam = match[1];
     }
-    
-    if(startParam && startParam.includes('=')) {
-        startParam = startParam.split('=').pop();
-    }
-    startParam = startParam.trim();
-
-    // 🚨 🔍 SYSTEM CHECK ALERT: මේකෙන් අපිට අල්ලගන්න පුළුවන් ලෙඩේ කොතනද කියලා!
-    if (startParam !== "") {
-        tg.showAlert("🔍 System Check: You clicked the link for ID [" + startParam + "]. If the video doesn't load below, this ID is NOT in the new database!");
-    }
+    if(startParam && startParam.includes('=')) startParam = startParam.split('=').pop();
+    startParam = (startParam || "").trim();
 
     if (ADMIN_IDS.includes(tg.initDataUnsafe?.user?.id)) {
         document.getElementById('adminBox').style.display = 'block';
     }
 
-    let uploadedImageUrl = "";
     let selectedLinkToOpen = "";
-    let selectedRecordId = null;
-
     let allAlbumsList = [];
     let currentPage = 1;
     const albumsPerPage = 10; 
@@ -377,45 +351,20 @@
         container.appendChild(input);
     });
 
-    document.getElementById('inputPhoto').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const statusDiv = document.getElementById('uploadStatus');
-        statusDiv.style.display = "block";
-        statusDiv.innerText = "⏳ Uploading photo... Please wait.";
-
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${Math.random()}_${new Date().getTime()}.${fileExt}`;
-
-        let { data, error } = await _supabase.storage.from('thumbnails').upload(filePath, file);
-        if (!error) {
-            const { data: publicData } = _supabase.storage.from('thumbnails').getPublicUrl(filePath);
-            uploadedImageUrl = publicData.publicUrl;
-            statusDiv.style.display = "block";
-            statusDiv.style.color = "#10b981";
-            statusDiv.innerText = "✅ Thumbnail uploaded successfully!";
-        } else {
-            statusDiv.style.display = "block";
-            statusDiv.style.color = "#f43f5e";
-            statusDiv.innerText = "❌ Upload Server Error!";
-        }
-    });
-
     function createVideoCardElement(group) {
         const card = document.createElement('div');
         card.className = 'video-card notranslate-img';
         
         let imgHtml = group.thumbnail ? 
-            `<div class="thumb-container"><img class="thumb-img" src="${group.thumbnail}?t=${new Date().getTime()}" alt="Thumb"></div>` : 
+            `<div class="thumb-container"><img class="thumb-img" src="${group.thumbnail}" alt="Thumb"></div>` : 
             `<div class="thumb-container" style="display:flex;align-items:center;justify-content:center;color:#4b5563;">No Thumbnail</div>`;
 
         let partsHtml = "";
-        group.parts.forEach((part, index) => {
+        group.parts.forEach((partUrl, index) => {
             partsHtml += `
-                <button class="part-btn" onclick="handlePartClick('${part.url}', ${part.id}, ${part.views})">
+                <button class="part-btn" onclick="handlePartClick('${partUrl}')">
                     <div class="part-left">
                         <span>🍿 Part ${index + 1}</span>
-                        <span class="view-count">👁️ ${part.views.toLocaleString()} views</span>
                     </div>
                     <div class="unlock-badge">Unlock</div>
                 </button>
@@ -427,7 +376,7 @@
             <div class="card-info">
                 <div class="card-top-row">
                     <div class="video-title">${group.title}</div>
-                    <button class="share-btn" onclick="window.shareVideo('${group.title}', '${group.safe_id}')">🔗 Share</button>
+                    <button class="share-btn" onclick="window.shareVideo('${group.safe_id}')">🔗 Share</button>
                 </div>
                 <div class="parts-container">${partsHtml}</div>
             </div>
@@ -435,57 +384,49 @@
         return card;
     }
 
+    // 🎯 Telegram Channel එකෙන් ඩේටා කියවන සිස්ටම් එක
     async function loadVideoList() {
         try {
-            let { data: videos } = await _supabase.from('videos').select('*').order('id', { ascending: false });
+            // Telegram Embedding API එකෙන් පෝස්ට් එකේ Text එක ගන්නවා
+            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://t.me/' + CHANNEL_USERNAME + '/' + MESSAGE_ID)}`);
+            const data = await response.json();
             
-            if (videos && videos.length > 0) {
-                const groupedVideos = {};
-
-                videos.forEach(vid => {
-                    const mainTitle = vid.title.trim();
-                    const safeId = "vid_" + vid.id;
-
-                    if (!groupedVideos[mainTitle]) {
-                        groupedVideos[mainTitle] = { title: mainTitle, thumbnail: vid.thumbnail, safe_id: safeId, parts: [] };
-                    }
-                    if(vid.thumbnail && !groupedVideos[mainTitle].thumbnail) {
-                        groupedVideos[mainTitle].thumbnail = vid.thumbnail;
-                    }
-                    groupedVideos[mainTitle].parts.push({
-                        id: vid.id,
-                        url: vid.video_url,
-                        views: vid.views || 0
-                    });
-                });
-
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.contents, 'text/html');
+            const metaTag = doc.querySelector('meta[property="og:description"]');
+            
+            if (metaTag) {
+                let jsonText = metaTag.getAttribute('content');
+                // Clean HTML Entities if any
+                jsonText = jsonText.replace(/&quot;/g, '"');
+                
+                if (jsonText && jsonText.startsWith('[') && jsonText.endsWith(']')) {
+                    allAlbumsList = JSON.parse(jsonText);
+                }
+            }
+            
+            if (allAlbumsList.length > 0) {
                 if (ADMIN_IDS.includes(tg.initDataUnsafe?.user?.id)) {
                     const adminLinksDiv = document.getElementById('adminLinksContainer');
                     adminLinksDiv.innerHTML = "";
-                    Object.values(groupedVideos).forEach(group => {
+                    allAlbumsList.forEach(group => {
                         const uniqueLink = BOT_APP_URL + "?startapp=" + group.safe_id;
                         const item = document.createElement('div');
                         item.className = 'admin-link-item';
-                        // 🎯 මෙන්න ඇස් දෙකට පේන්න ලින්ක් එක හැදුවා!
                         item.innerHTML = `
-                            <div class="link-row" style="margin-bottom: 5px;">
-                                <span>🎬 ${group.title}</span>
-                            </div>
-                            <input type="text" value="${uniqueLink}" readonly style="width:100%; padding:8px; border-radius:6px; background:#0b0e17; color:#0ea5e9; border:1px solid #272f45; font-size:11px; margin-bottom:5px;" onclick="this.select();">
-                            <button class="copy-inline-btn" onclick="window.copyToClipboard('${uniqueLink}')">📋 Copy Link</button>
+                            <div style="font-weight:bold;">🎬 ${group.title}</div>
+                            <input type="text" value="${uniqueLink}" readonly style="width:100%; padding:6px; border-radius:6px; background:#0b0e17; color:#0ea5e9; border:1px solid #272f45; font-size:11px;" onclick="this.select();">
+                            <button class="copy-inline-btn" onclick="window.copyToClipboard('${uniqueLink}')">📋 Copy</button>
                         `;
                         adminLinksDiv.appendChild(item);
                     });
                 }
-
-                allAlbumsList = Object.values(groupedVideos);
                 renderCurrentPage();
-
             } else {
-                document.getElementById('video-list-wrapper').innerHTML = `<div id="no-content">No premium content available yet.</div>`;
+                document.getElementById('video-list-wrapper').innerHTML = `<div id="no-content">No premium content available yet. Add via Admin panel.</div>`;
             }
         } catch(e) {
-            document.getElementById('video-list-wrapper').innerHTML = `<div id="no-content">Loading Error.</div>`;
+            document.getElementById('video-list-wrapper').innerHTML = `<div id="no-content">Loading Error or Empty Database.</div>`;
         }
     }
 
@@ -513,9 +454,6 @@
                 if(listToPaginate.length > 0) {
                     moreSection.style.display = 'block';
                 }
-            } else {
-                tg.showAlert("⚠️ ERROR: The video album you clicked is missing or deleted from your database!");
-                document.getElementById('viewModeBanner').style.display = 'none';
             }
         } else {
             document.getElementById('viewModeBanner').style.display = 'none';
@@ -555,101 +493,107 @@
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
     }
 
-    // 🎯 බලවත්ම Auto-Copy + Text Box තේරීම
     window.copyToClipboard = function(text) {
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(text).then(function() {
-                tg.showAlert("✅ Link Auto-Copied! Paste it in your channel.");
-            }).catch(function(err) {
-                fallbackCopy(text);
-            });
-        } else {
-            fallbackCopy(text);
-        }
+                tg.showAlert("✅ Link Copied Successfully!");
+            }).catch(function() { fallbackCopy(text); });
+        } else { fallbackCopy(text); }
     }
 
     function fallbackCopy(text) {
         let textArea = document.createElement("textarea");
         textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
+        textArea.style.position = "fixed"; textArea.style.left = "-9999px";
         document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
+        textArea.focus(); textArea.select();
         try {
             document.execCommand("copy");
-            tg.showAlert("✅ Link Auto-Copied! Paste it in your channel.");
+            tg.showAlert("✅ Link Copied Successfully!");
         } catch (err) {
-            window.prompt("Your device blocked Auto-Copy. Copy manually below:", text);
+            window.prompt("Copy manually:", text);
         }
         document.body.removeChild(textArea);
     }
 
-    window.shareVideo = function(title, safeId) {
+    window.shareVideo = function(safeId) {
         const shareLink = BOT_APP_URL + "?startapp=" + safeId;
         window.copyToClipboard(shareLink);
     }
 
     window.clearDeepLink = function() {
-        startParam = "";
-        currentPage = 1; 
+        startParam = ""; currentPage = 1; 
         document.getElementById('viewModeBanner').style.display = 'none';
         renderCurrentPage();
     }
 
-    window.handlePartClick = async function(link, id, currentViews) {
+    window.handlePartClick = function(link) {
         selectedLinkToOpen = link;
-        selectedRecordId = id;
-
         if (typeof show_11181851 !== 'function') {
-            tg.showPopup({ 
-                title: '⚠️ AdBlocker Detected!', 
-                message: 'Please turn off your AdBlocker, restart the app, and try again to unlock the video!' 
-            });
+            tg.showPopup({ title: '⚠️ AdBlocker Detected!', message: 'Turn off AdBlocker to unlock video!' });
             return; 
         }
-
-        try {
-            await _supabase
-                .from('videos')
-                .update({ views: currentViews + 1 })
-                .eq('id', id);
-        } catch (e) { console.log("Views Update Error"); }
-
-        show_11181851().then(() => {
-            redirectUser();
-        }).catch((e) => {
-            redirectUser(); 
-        });
+        show_11181851().then(() => { redirectUser(); }).catch(() => { redirectUser(); });
     }
 
     function redirectUser() {
-        if(selectedLinkToOpen) {
-            window.location.href = selectedLinkToOpen;
-        }
+        if(selectedLinkToOpen) window.location.href = selectedLinkToOpen;
     }
 
+    // 🎯 ඇප් එක ඇතුළෙන්ම චැනල් පෝස්ට් එක ඔටෝ එඩිට් කරලා සේව් කරන බටන් එක
     document.getElementById('saveBtn').addEventListener('click', async () => {
         const title = document.getElementById('inputTitle').value.trim();
+        const photoUrl = document.getElementById('inputPhotoUrl').value.trim();
         const urlInputs = document.querySelectorAll('.input-video-url');
         
         if(!title) { alert('Album Title is required!'); return; }
 
-        const recordsToInsert = [];
+        const partsArray = [];
         urlInputs.forEach(input => {
             const url = input.value.trim();
-            if(url) {
-                recordsToInsert.push({ title: title, thumbnail: uploadedImageUrl, video_url: url, views: 0 });
-            }
+            if(url) partsArray.push(url);
         });
 
-        if(recordsToInsert.length === 0) { alert('Please enter at least one video URL!'); return; }
+        if(partsArray.length === 0) { alert('Enter at least one Video URL!'); return; }
 
-        const { error = null } = await _supabase.from('videos').insert(recordsToInsert);
-        if (!error) {
-            alert('New video album successfully published!');
-            location.reload();
-        } else { alert('Database Error: ' + error.message); }
+        const uniqueSafeId = "vid_" + Math.floor(1000 + Math.random() * 9000);
+
+        // අලුත් ඇල්බම් ඔබ්ජෙක්ට් එක
+        const newAlbum = {
+            safe_id: uniqueSafeId,
+            title: title,
+            thumbnail: photoUrl,
+            parts: partsArray
+        };
+
+        // දැනට තියෙන ලිස්ට් එකට උඩින්ම එකතු කරනවා
+        allAlbumsList.unshift(newAlbum);
+
+        const updatedJsonString = JSON.stringify(allAlbumsList);
+
+        // Telegram Bot API එකෙන් චැනල් පෝස්ට් එක ඔටෝ එඩිට් කරනවා
+        const telegramApiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`;
+        
+        try {
+            const res = await fetch(telegramApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: `@${CHANNEL_USERNAME}`,
+                    message_id: parseInt(MESSAGE_ID),
+                    text: updatedJsonString
+                })
+            });
+            const result = await res.json();
+            if(result.ok) {
+                alert('🚀 Video Album Successfully Published directly to Telegram DB!');
+                location.reload();
+            } else {
+                alert('Telegram DB Error: ' + result.description);
+            }
+        } catch(e) {
+            alert('Publishing Error. Check Connection.');
+        }
     });
     
     loadVideoList();
